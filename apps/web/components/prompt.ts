@@ -1,10 +1,7 @@
 import { BaseSchema } from "@workspace/puck/base";
 import { Data } from "@measured/puck";
 
-export const promptV1 = (
-  schema: { [key: string]: any },
-  currentData?: Data
-) => `
+export const promptV1 = (schema: { [key: string]: any }, currentData?: Data) => `
 You are a highly skilled AI for generating JSON content for the Puck editor.
 
 **Available components (MUST ONLY use these):**
@@ -69,24 +66,46 @@ ${
 
 \`\`\`json
 {
-  "root": {},
+  "root": {
+    "title": "Page Title",
+  },
   "content": [
     {
-      "type": "ComponentName",
+      "type": "componentName",
       "props": {
         ...,
-        "id": "componentName-{id(n)}"
+        "id": "<componentName>-{id(n)}"
       }
     },
     {copy(content.1)}
   ],
   "zones": {
-    "componentName-{id(n)}:children": [
+    "<componentName>-{id(n)}:<children-id>": [
       { "type": "ComponentName", "props": { ... } }
     ]
   }
 }
 \`\`\`
+
+--- 
+
+Children should be placed in the "zones" object, not in the "props" object. Patterns marked as ❌ are wrong
+
+"content": [
+  {
+    "type": "componentName",
+    "props": {
+      ...,
+      "id": "<componentName>-{id(n)}"
+      "zone": [...] ❌
+    }
+  }
+],
+"zones": {
+  "<componentName>-{id(n)}:<children-id>": [
+    { "type": "ComponentName", "props": { ..., zone: [...] ❌ } }
+  ] ✅
+}
 
 ---
 
