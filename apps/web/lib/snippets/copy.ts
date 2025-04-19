@@ -5,14 +5,26 @@ import { Data } from "@measured/puck";
  * Handles special characters like colons in path segments
  */
 const getValueByPath = (obj: any, path: string): any => {
-  // Split the path but preserve segments with colons
-  const segments = path.match(/[^.]+/g) || [];
-  
-  return segments.reduce((o, key) => {
-    // Handle undefined or null objects
-    if (o === undefined || o === null) return undefined;
-    return o[key];
-  }, obj);
+  // Special handling for paths with colons
+  if (path.includes(':')) {
+    // For paths with colons, we need to access them directly
+    const parts = path.split('.');
+    let current = obj;
+    
+    for (const part of parts) {
+      if (current === undefined || current === null) return undefined;
+      current = current[part];
+    }
+    
+    return current;
+  } else {
+    // Regular path handling
+    const segments = path.match(/[^.]+/g) || [];
+    return segments.reduce((o, key) => {
+      if (o === undefined || o === null) return undefined;
+      return o[key];
+    }, obj);
+  }
 };
 
 /**

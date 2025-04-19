@@ -1,31 +1,63 @@
-# shadcn/ui monorepo template
+# Shadcn AI-Powered Editor
 
-This template is for creating a monorepo with shadcn/ui.
+A powerful drag-and-drop web interface builder enhanced with AI assistance. Design beautiful, responsive layouts quickly using natural language instructions and a visual editor.
 
-## Usage
+## Features
 
-```bash
-pnpm dlx shadcn@latest init
-```
+- **AI-Powered Layout Generation**: Create components and layouts using natural language prompts
+- **Visual Drag-and-Drop Editor**: Built on [Puck Editor](https://github.com/measuredco/puck)
+- **Component Library**: Integrated with [shadcn/ui](https://ui.shadcn.com/) components
 
-## Adding components
+## What's in the Packages
 
-To add components to your app, run the following command at the root of your `web` app:
+This monorepo contains:
 
-```bash
-pnpm dlx shadcn@latest add button -c apps/web
-```
+- **apps/web**: Main application with the AI-powered editor
+  - `components/`: Reusable UI components
+  - `lib/`: Utility functions and processing logic
+  - `lib/snippets/`: Dynamic content pattern processors
+- **packages/ui**: Shared UI component library based on shadcn/ui
+- **packages/puck**: Extensions and configurations for the Puck editor
 
-This will place the ui components in the `packages/ui/src/components` directory.
+## Getting Started
 
-## Tailwind
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/your-username/shadcn-monorepo.git
+   cd shadcn-monorepo
+   ```
 
-Your `tailwind.config.ts` and `globals.css` are already set up to use the components from the `ui` package.
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-## Using components
+3. Start the development server:
+   ```bash
+   npm run dev
+   ```
 
-To use the components in your app, import them from the `ui` package.
+4. Open [http://localhost:3000](http://localhost:3000) in your browser
 
-```tsx
-import { Button } from "@workspace/ui/components/button"
-```
+## Using the AI Assistant
+
+1. Configure your Google AI API key in the settings panel
+2. Type a natural language description of what you want to build
+3. Review the generated layout
+4. Apply changes to the editor
+5. Fine-tune with the drag-and-drop interface
+
+## To-Do
+
+- [ ] Add more pre-built component templates
+- [ ] Improve mobile responsiveness handlers
+- [ ] Enhance AI prompt templates for better generations
+- [ ] Add real-time collaboration features
+- [ ] Create more comprehensive tests for snippet processors
+- [ ] Add documentation site with examples
+- [ ] Support for theme customization
+- [ ] Export options for generated layouts
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details.
