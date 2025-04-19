@@ -13,13 +13,13 @@ import { ChatInterface } from "@/components/chat-interface";
 // import config from "@/puck.config.test";
 import config from "@/puck.config";
 import { RefreshCcw } from "lucide-react";
+import { schema } from "../../../../puck.config";
 
 export function Client() {
   const [tab, setTab] = useState<"components" | "chat">("components");
   const data = localStorage.getItem("puck")
     ? (JSON.parse(localStorage.getItem("puck") || "") as Data)
     : {};
-
   return (
     <>
       <Puck
