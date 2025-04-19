@@ -11,8 +11,9 @@ import {
 } from "@workspace/ui/components/tabs";
 import { ChatInterface } from "@/components/chat-interface";
 // import config from "@/puck.config.test";
-import config, { schema } from "./puck.config";
+import config from "@/puck.config";
 import { RefreshCcw } from "lucide-react";
+import { schema } from "../../../../puck.config";
 
 export function Client() {
   const [tab, setTab] = useState<"components" | "chat">("components");
@@ -62,7 +63,10 @@ export function Client() {
           },
           headerActions(props) {
             return (
-              <div className="flex items-center gap-2">{props.children}</div>
+              <div className="flex items-center gap-2">
+                
+                {props.children}
+              </div>
             );
           },
         }}
