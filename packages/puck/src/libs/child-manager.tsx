@@ -3,25 +3,30 @@ import { DropZone, PuckContext } from "@measured/puck";
 import * as z from "zod";
 import { cn } from "@workspace/ui/lib/utils";
 
-// Dropzone schema definition (moved from dropzone.tsx)
-export const DropzoneSchema = z.object({
-  allow: z.array(z.string()).optional(),
-  disallow: z.array(z.string()).optional(),
-  style: z.any().optional(),
-  minEmptyHeight: z.number().optional(),
-  className: z.string().optional(),
-  collisionAxis: z.enum(["x", "y", "dynamic"]).optional(),
-});
-
 // Type from the Zod schema
-export type DropZoneProps = z.infer<typeof DropzoneSchema>;
-
+export type DropZoneProps = {
+  allow?: string[] | undefined;
+  disallow?: string[] | undefined;
+  style?: CSSProperties | undefined;
+  minEmptyHeight?: number | undefined;
+  className?: string | undefined;
+  collisionAxis?: "x" | "y" | "dynamic" | undefined;
+}
 // Union of the Zod type and the original prop type for backward compatibility
 export type DropzoneBuilderProps = {
   zone: string;
   dropzoneProperties: DropZoneProps;
   puck: PuckContext;
 };
+
+export const DropZoneSchema = `type DropZoneProps = {
+  allow?: string[] | undefined;
+  disallow?: string[] | undefined;
+  style?: CSSProperties | undefined;
+  minEmptyHeight?: number | undefined;
+  className?: string | undefined;
+  collisionAxis?: "x" | "y" | "dynamic" | undefined;
+}`;
 
 // Dropzone Builder component (moved from dropzone.tsx)
 export const DropzoneBuilder = ({
@@ -55,29 +60,38 @@ export const DropzoneBuilder = ({
   );
 };
 
-// Children schema types
-export const ChildrenSchema = z.discriminatedUnion("children", [
-  z.object({
-    element: z.string(),
-    children: z.literal("none"),
-    childrenProps: z.object({}),
-  }),
-  z.object({
-    element: z.string(),
-    children: z.literal("text"),
-    childrenProps: z.object({
-      value: z.string(),
-    }),
-  }),
-  // Now using the locally defined DropzoneSchema
-  z.object({
-    element: z.string(),
-    children: z.literal("dropzone"),
-    childrenProps: DropzoneSchema,
-  }),
-]);
+export type ChildrenType = {
+  children: "none";
+  element: string;
+  childrenProps: {};
+} | {
+  children: "text";
+  element: string;
+  childrenProps: {
+      value: string;
+  };
+} | {
+  children: "dropzone";
+  element: string;
+  childrenProps: DropZoneProps;
+}
 
-export type ChildrenType = z.infer<typeof ChildrenSchema>;
+export const ChildrenSchema = `type ChildrenType = {
+  children: "none";
+  element: string;
+  childrenProps: {};
+} | {
+  children: "text";
+  element: string;
+  childrenProps: {
+      value: string;
+  };
+} | {
+  children: "dropzone";
+  element: string;
+  childrenProps: DropZoneProps;
+}
+`
 
 // Union type for possible children types
 export type ChildProps = {

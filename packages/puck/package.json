@@ -26,6 +26,6 @@
   },
   "exports": {
     "./*": "./src/config/*.tsx",
-    "./lib": "./src/lib/*.ts"
+    "./lib/*": "./src/libs/*.tsx"
   }
 }
