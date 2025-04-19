@@ -16,19 +16,18 @@ export function Brand({
     name: string;
     logo: React.ReactNode;
     plan?: string;
+    href: string;
   };
   linkComponent?: React.ComponentType<{ href: string; children: React.ReactNode }>;
 }) {
-  if (!activeTeam) {
-    return null;
-  }
+  if (!activeTeam) return null;
   const LinkComponent = linkComponent || "a";
 
   return (
     <SidebarMenu>
       <SidebarMenuItem>
         <SidebarMenuButton size="lg" asChild>
-          <LinkComponent href="/dashboard">
+          <LinkComponent href={activeTeam.href}>
             <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg p-2">
               {activeTeam.logo}
             </div>

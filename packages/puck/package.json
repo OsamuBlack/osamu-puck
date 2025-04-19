@@ -1,0 +1,31 @@
+{
+  "name": "@workspace/puck",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "lint": "eslint . --max-warnings 0"
+  },
+  "dependencies": {
+    "@measured/puck": "^0.18.3",
+    "@workspace/blocks": "workspace:*",
+    "@workspace/ui": "workspace:*",
+    "lucide-react": "^0.475.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@turbo/gen": "^2.4.2",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@workspace/eslint-config": "workspace:*",
+    "@workspace/typescript-config": "workspace:*",
+    "typescript": "^5.7.3"
+  },
+  "exports": {
+    "./*": "./src/config/*.tsx",
+    "./lib": "./src/lib/*.ts"
+  }
+}

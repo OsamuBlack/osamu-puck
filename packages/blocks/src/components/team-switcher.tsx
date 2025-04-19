@@ -19,14 +19,13 @@ import {
   useSidebar,
 } from "@workspace/ui/components/sidebar";
 
+// Extend props with an optional linkComponent.
 export function TeamSwitcher({
   teams,
+  linkComponent: LinkComponent,
 }: {
-  teams: {
-    name: string;
-    logo: React.ReactNode;
-    plan?: string;
-  }[];
+  teams: { name: string; logo: React.ReactNode; plan?: string; href: string }[];
+  linkComponent?: React.ComponentType<{ href: string; children: React.ReactNode }>;
 }) {
   const { isMobile } = useSidebar();
   const [activeTeam, setActiveTeam] = React.useState(teams[0]);
@@ -71,11 +70,23 @@ export function TeamSwitcher({
                 onClick={() => setActiveTeam(team)}
                 className="gap-2 p-2"
               >
-                <div className="flex size-6 items-center justify-center rounded-md border">
-                  <span className="size-3.5 shrink-0">{team.logo}</span>
-                </div>
-                {team.name}
-                <DropdownMenuShortcut>⌘{index + 1}</DropdownMenuShortcut>
+                {LinkComponent ? (
+                  <LinkComponent href={team.href}>
+                    <div className="flex size-6 items-center justify-center rounded-md border">
+                      <span className="size-3.5 shrink-0">{team.logo}</span>
+                    </div>
+                    {team.name}
+                    <DropdownMenuShortcut>⌘{index + 1}</DropdownMenuShortcut>
+                  </LinkComponent>
+                ) : (
+                  <>
+                    <div className="flex size-6 items-center justify-center rounded-md border">
+                      <span className="size-3.5 shrink-0">{team.logo}</span>
+                    </div>
+                    {team.name}
+                    <DropdownMenuShortcut>⌘{index + 1}</DropdownMenuShortcut>
+                  </>
+                )}
               </DropdownMenuItem>
             ))}
             <DropdownMenuSeparator />

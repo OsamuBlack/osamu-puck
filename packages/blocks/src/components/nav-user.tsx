@@ -29,15 +29,17 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@workspace/ui/components/sidebar";
+import React from "react";
 
+// Update props: replace dropdownExtra with dropdownItems array.
 export function NavUser({
   user,
+  onLogout,
+  dropdownItems,
 }: {
-  user: {
-    name: string;
-    email: string;
-    avatar: string;
-  };
+  user: { name: string; email: string; avatar: string };
+  onLogout?: () => void;
+  dropdownItems?: React.ReactNode[];
 }) {
   const { isMobile } = useSidebar();
 
@@ -84,22 +86,33 @@ export function NavUser({
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <BadgeCheck />
-                Account
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <CreditCard />
-                Billing
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Bell />
-                Notifications
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            {dropdownItems ? (
+              dropdownItems.map((item, index) => (
+                <React.Fragment key={index}>
+                  {item}
+                  {index !== dropdownItems.length - 1 && <DropdownMenuSeparator />}
+                </React.Fragment>
+              ))
+            ) : (
+              <>
+                <DropdownMenuGroup>
+                  <DropdownMenuItem>
+                    <BadgeCheck />
+                    Account
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <CreditCard />
+                    Billing
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>
+                    <Bell />
+                    Notifications
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
+                <DropdownMenuSeparator />
+              </>
+            )}
+            <DropdownMenuItem onClick={() => onLogout && onLogout()}>
               <LogOut />
               Log out
             </DropdownMenuItem>

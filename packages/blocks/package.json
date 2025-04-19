@@ -37,10 +37,9 @@
     "typescript": "^5.7.3"
   },
   "exports": {
-    "./globals.css": "./src/styles/globals.css",
-    "./postcss.config": "./postcss.config.mjs",
     "./lib/*": "./src/lib/*.ts",
     "./components/*": "./src/components/*.tsx",
+    "./*": "./src/blocks/*.tsx",
     "./hooks/*": "./src/hooks/*.ts"
   }
 }
