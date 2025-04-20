@@ -8,35 +8,34 @@ import {
   usePuck,
 } from "@measured/puck";
 import React, { isValidElement, useEffect } from "react";
-import { DropzoneSchema } from "./dropzone.js";
+
 import {
-  ChildrenSchema,
+  ChildrenType,
   renderChild,
   childrenFields,
 } from "../libs/child-manager.js";
 import { ErrorBoundary } from "@workspace/blocks/libs/error-boundary.js";
-import * as z from "zod";
 import { JsonEditor } from "@workspace/ui/components/json-editor";
 
-export const BaseSchema = z.object({
-  properties: z.array(
-    z.object({
-      key: z.string(),
-      valueType: z.enum(["string", "number", "boolean", "function", "json"]),
-    })
-  ),
-  values: z
-    .record(
-      z.union([z.string(), z.number(), z.boolean(), DropzoneSchema, z.any()])
-    )
-    .optional(),
-});
+export const BaseSchema = `type BaseType = {
+    properties: {
+        key: string;
+        valueType: "string" | "number" | "boolean" | "function" | "json";
+    }[];
+    values?: Record<string, any> | undefined;
+}`;
 
-// Use the imported ChildrenSchema from child-manager
-export const BaseComponentSchema = z.intersection(BaseSchema, ChildrenSchema);
+export type BaseType = {
+  properties: {
+    key: string;
+    valueType: "string" | "number" | "boolean" | "function" | "json";
+  }[];
+  values?: Record<string, any> | undefined;
+};
 
-export type BaseType = z.infer<typeof BaseSchema>;
-export type BaseComponentType = z.infer<typeof BaseComponentSchema>;
+export type BaseComponentType = BaseType & ChildrenType
+
+export const BaseComponentSchema = `BaseType & ChildrenType`;
 
 const createValueField = (
   key: string,
@@ -118,13 +117,13 @@ export const baseFields = (props: BaseType): Fields<BaseType> => {
     },
     values: properties.length
       ? {
-          type: "object",
-          objectFields: props.properties.reduce((acc, { key, valueType }) => {
-            if (!key) return acc;
-            (acc as any)[key] = createValueField(key, valueType);
-            return acc;
-          }, {}),
-        }
+        type: "object",
+        objectFields: props.properties.reduce((acc, { key, valueType }) => {
+          if (!key) return acc;
+          (acc as any)[key] = createValueField(key, valueType);
+          return acc;
+        }, {}),
+      }
       : /*{
           type: "custom",
           render: (p) => {
@@ -156,7 +155,7 @@ export const baseFields = (props: BaseType): Fields<BaseType> => {
             );
           },
         } : */
-        undefined,
+      undefined,
   };
 };
 

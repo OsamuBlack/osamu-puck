@@ -17,14 +17,14 @@ import {
   SheetTrigger,
 } from "@workspace/ui/components/sheet";
 import { Slider } from "@workspace/ui/components/slider";
-import { config as puckConfig, schema } from "@/puck.config";
+import { config as puckConfig, schema } from "@/app/(dashboard)/dashboard/puck/puck.config";
 import { usePuck, type Data } from "@measured/puck";
 import {
   GoogleGenerativeAI,
   HarmCategory,
   HarmBlockThreshold,
 } from "@google/generative-ai";
-import { promptV1 } from "./prompt";
+import { promptV1, promptV2 } from "../lib/prompts/prompt";
 import { processData } from "../lib/processSnippets";
 import { Settings, Check, Key, Copy, ClipboardPaste, Clipboard, Code } from "lucide-react";
 import { JsonEditor } from "@workspace/ui/components/json-editor";
@@ -110,7 +110,7 @@ export function ChatInterface({
 
   // Copy prompt to clipboard
   const copyPromptToClipboard = () => {
-    const currentPrompt = promptV1(schema, currentPuckData);
+    const currentPrompt = promptV2(schema, currentPuckData);
     navigator.clipboard.writeText(currentPrompt)
       .then(() => {
         toast.success("Prompt copied to clipboard");
