@@ -15,7 +15,8 @@
     },
     "dev": {
       "cache": false,
-      "persistent": true
+      "persistent": true,
+      "env": ["GOOGLE_GENERATIVE_AI_API_KEY", "OPENAI_API_KEY"]
     }
   }
 }

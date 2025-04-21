@@ -1,6 +1,6 @@
 import type { Config } from "@measured/puck";
 
-import { BaseComponentConfig, BaseComponentSchema, BaseComponentType } from "@workspace/puck/base";
+import { BaseComponentConfig, BaseComponentSchema, BaseComponentType } from "@workspace/puck/base/config";
 
 type ComponentProps = {
   base: BaseComponentType;
