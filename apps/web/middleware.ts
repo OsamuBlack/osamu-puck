@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
 export default function middleware(req: NextRequest) {
-  
   const res = NextResponse.next();
 
   if (req.method === "GET") {
@@ -11,7 +10,9 @@ export default function middleware(req: NextRequest) {
         0,
         req.nextUrl.pathname.length - 5
       );
-      const pathWithEditPrefix = `/dashboard/puck?page=${pathWithoutEdit}`;
+      // search params
+      const searchParams = req.nextUrl.searchParams.toString();
+      const pathWithEditPrefix = `/dashboard/puck/${pathWithoutEdit}?${searchParams}`;
 
       return NextResponse.rewrite(new URL(pathWithEditPrefix, req.url));
     }
