@@ -1,0 +1,161 @@
+import { usePuck } from "@measured/puck";
+import { ReactNode } from "react";
+
+interface IframeConfigProps {
+  document: Document | null;
+  children: ReactNode;
+}
+
+export function IframeConfig({ document, children }: IframeConfigProps) {
+  const { appState } = usePuck();
+
+  if (document) {
+    document.body.style.color = "black";
+    document.body.style.backgroundColor = "white";
+
+    // Inject Tailwind styles
+    const tailwindScript = document.createElement("script");
+    tailwindScript.src = "https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4";
+    document.head.appendChild(tailwindScript);
+
+    // Inject theme variables from globals.css
+    const styleElement = document.createElement("style");
+    styleElement.textContent = `
+      @theme {
+        --color-background: var(--background);
+        --color-foreground: var(--foreground);
+        --color-card: var(--card);
+        --color-card-foreground: var(--card-foreground);
+        --color-popover: var(--popover);
+        --color-popover-foreground: var(--popover-foreground);
+        --color-primary: var(--primary);
+        --color-primary-foreground: var(--primary-foreground);
+        --color-secondary: var(--secondary);
+        --color-secondary-foreground: var(--secondary-foreground);
+        --color-muted: var(--muted);
+        --color-muted-foreground: var(--muted-foreground);
+        --color-accent: var(--accent);
+        --color-accent-foreground: var(--accent-foreground);
+        --color-destructive: var(--destructive);
+        --color-destructive-foreground: var(--destructive-foreground);
+        --color-border: var(--border);
+        --color-input: var(--input);
+        --color-ring: var(--ring);
+        --color-chart-1: var(--chart-1);
+        --color-chart-2: var(--chart-2);
+        --color-chart-3: var(--chart-3);
+        --color-chart-4: var(--chart-4);
+        --color-chart-5: var(--chart-5);
+        --radius-sm: calc(var(--radius) - 4px);
+        --radius-md: calc(var(--radius) - 2px);
+        --radius-lg: var(--radius);
+        --radius-xl: calc(var(--radius) + 4px);
+        --color-sidebar: var(--sidebar);
+        --color-sidebar-foreground: var(--sidebar-foreground);
+        --color-sidebar-primary: var(--sidebar-primary);
+        --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+        --color-sidebar-accent: var(--sidebar-accent);
+        --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+        --color-sidebar-border: var(--sidebar-border);
+        --color-sidebar-ring: var(--sidebar-ring);
+      }
+    `;
+    document.head.appendChild(styleElement);
+    
+    // Copy the CSS variables from globals.css
+    const cssVarsElement = document.createElement("style");
+    cssVarsElement.textContent = `
+      :root {
+        --background: hsl(0, 0%, 100%);
+        --foreground: hsl(0, 0%, 5%);
+        --card: hsl(0, 0%, 99%);
+        --card-foreground: hsl(0, 0%, 5%);
+        --popover: hsl(0, 0%, 99%);
+        --popover-foreground: hsl(0, 0%, 5%);
+        --primary: hsl(182, 100%, 10%);
+        --primary-foreground: hsl(0, 0%, 98%);
+        --secondary: hsl(0, 0%, 95%);
+        --secondary-foreground: hsl(0, 0%, 5%);
+        --muted: hsl(0, 0%, 95%);
+        --muted-foreground: hsl(0, 0%, 45%);
+        --accent: hsl(0, 0%, 95%);
+        --accent-foreground: hsl(0, 0%, 5%);
+        --destructive: hsl(0, 84%, 60%);
+        --destructive-foreground: hsl(0, 0%, 98%);
+        --border: hsl(0, 0%, 91%);
+        --input: hsl(0, 0%, 84%);
+        --ring: hsl(0, 0%, 76%);
+        --chart-1: hsl(182, 100%, 10%);
+        --chart-2: hsl(86, 100%, 72%);
+        --chart-3: hsl(90, 5%, 15%);
+        --chart-4: hsl(0, 84%, 60%);
+        --chart-5: hsl(86, 100%, 40%);
+        --radius: 0.5rem;
+        --sidebar: hsl(0, 0%, 98%);
+        --sidebar-foreground: hsl(0, 0%, 5%);
+        --sidebar-primary: hsl(182, 100%, 10%);
+        --sidebar-primary-foreground: hsl(0, 0%, 98%);
+        --sidebar-accent: hsl(0, 0%, 95%);
+        --sidebar-accent-foreground: hsl(0, 0%, 5%);
+        --sidebar-border: hsl(0, 0%, 91%);
+        --sidebar-ring: hsl(0, 0%, 76%);
+      }
+
+      .dark {
+        --background: hsl(120, 3%, 6%);
+        --foreground: hsl(0, 0%, 98%);
+        --card: hsl(90, 6%, 7%);
+        --card-foreground: hsl(0, 0%, 98%);
+        --popover: hsl(90, 6%, 7%);
+        --popover-foreground: hsl(0, 0%, 98%);
+        --primary: hsl(86, 100%, 72%);
+        --primary-foreground: hsl(0, 0%, 2%);
+        --secondary: hsl(90, 5%, 15%);
+        --secondary-foreground: hsl(0, 0%, 98%);
+        --muted: hsl(90, 5%, 22%);
+        --muted-foreground: hsl(85, 5%, 49%);
+        --accent: hsl(85, 45%, 14%);
+        --accent-foreground: hsl(0, 0%, 98%);
+        --destructive: hsl(0, 84%, 60%);
+        --destructive-foreground: hsl(0, 0%, 98%);
+        --border: hsl(14, 29%, 85%);
+        --input: hsl(90, 4%, 18%);
+        --ring: hsl(86, 100%, 40%);
+        --chart-1: hsl(86, 100%, 72%);
+        --chart-2: hsl(0, 84%, 60%);
+        --chart-3: hsl(90, 5%, 15%);
+        --chart-4: hsl(85, 45%, 14%);
+        --chart-5: hsl(86, 100%, 40%);
+        --sidebar: hsl(182, 100%, 10%);
+        --sidebar-foreground: hsl(0, 0%, 98%);
+        --sidebar-primary: hsl(86, 100%, 72%);
+        --sidebar-primary-foreground: hsl(0, 0%, 2%);
+        --sidebar-accent: hsl(90, 5%, 15%);
+        --sidebar-accent-foreground: hsl(0, 0%, 98%);
+        --sidebar-border: hsl(80, 5%, 12%);
+        --sidebar-ring: hsl(86, 100%, 40%);
+      }
+
+      @layer base {
+        * {
+          @apply border-border outline-ring/50;
+        }
+        body {
+          @apply bg-background text-foreground;
+        }
+      }
+    `;
+    document.head.appendChild(cssVarsElement);
+
+    // Add tailwind directives for processing
+    const tailwindDirectives = document.createElement("style");
+    tailwindDirectives.textContent = `
+      @tailwind base;
+      @tailwind components;
+      @tailwind utilities;
+    `;
+    document.head.appendChild(tailwindDirectives);
+  }
+
+  return children as JSX.Element;
+}

@@ -9,7 +9,6 @@ import { Textarea } from "@workspace/ui/components/textarea";
 import { Badge } from "@workspace/ui/components/badge";
 import { Separator } from "@workspace/ui/components/separator";
 import { usePuck, type Data } from "@measured/puck";
-import { JsonEditor } from "@workspace/ui/components/json-editor";
 import { toast } from "sonner";
 import {
   RefreshCcw,
@@ -19,24 +18,34 @@ import {
   Clipboard,
   Loader2,
 } from "lucide-react";
-import { puckSchema } from "@/app/schema";
 import { id } from "@/lib/snippets/id";
 import { properties } from "@/lib/snippets/properties";
 import { zones } from "@/lib/snippets/zones";
+import { transformers } from "@/lib/snippets/transformers";
+import { useUnsplashProcessor } from "./unsplash-processor";
+import { processUnsplashImages } from "@/lib/snippets/unsplash";
+import { puckSchema } from "@/app/(dashboard)/dashboard/puck/schema";
 
-export default function ChatComponent() {
+export default function ChatComponent({ path }: { path?: string }) {
   const [inputValue, setInputValue] = useState("");
   const [editedJson, setEditedJson] = useState("");
   const [showJsonPaste, setShowJsonPaste] = useState(false);
   const [pastedJson, setPastedJson] = useState("");
+  const [isProcessingUnsplash, setIsProcessingUnsplash] = useState(false);
+  const [justApplied, setJustApplied] = useState(false);
   const {
     dispatch,
     appState: { data: currentData },
   } = usePuck();
 
+  useEffect(() => {
+    if (justApplied) {
+      setJustApplied(false);
+    }
+  }, [justApplied]);
   // Use the useObject hook for streaming structured data
   const { object, submit, isLoading, stop, error } = useObject({
-    api: "/api/generate/google",
+    api: path ? path : "/api/generate/google",
     schema: puckSchema,
     // Add event callbacks
     onFinish({ object, error }) {
@@ -64,10 +73,9 @@ export default function ChatComponent() {
 
       // Apply converters in sequence
       jsonString = id(jsonString);
-      jsonString = properties(jsonString);
+      jsonString = transformers(jsonString);
       jsonString = zones(jsonString);
 
-      // Parse back to object
       return JSON.parse(jsonString);
     } catch (error) {
       console.error("Error processing JSON:", error);
@@ -85,16 +93,31 @@ export default function ChatComponent() {
       // Process JSON through converters
       const processedData = processGeneratedJson(jsonData);
 
-      // Apply to Puck
-      dispatch({
-        type: "setData",
-        data: {
-          ...processedData,
-          root: currentData.root,
-        } as Data,
-      });
+      setIsProcessingUnsplash(true);
+      processUnsplashImages(processedData)
+        .then((processedData: Data) => {
+          // Apply to Puck
+          dispatch({
+            type: "setData",
+            data: {
+              ...processedData,
+              root: currentData.root,
+            } as Data,
+          });
+          setJustApplied(true);
 
-      toast.success(successMessage);
+          toast.success(successMessage);
+        })
+        .catch((error) => {
+          toast.error(
+            "Error processing Unsplash images. Please check your JSON."
+          );
+          console.error("Error processing Unsplash images:", error);
+        })
+        .finally(() => {
+          setIsProcessingUnsplash(false);
+        });
+
       return true;
     } catch (e) {
       console.error("Failed to apply JSON:", e);
@@ -217,10 +240,10 @@ export default function ChatComponent() {
 
     // Clear previous JSON and set loading state
     setEditedJson("");
-    dispatch({
-      type: "setUi",
-      ui: (prev) => ({ ...prev, previewMode: "interactive" }),
-    });
+    // dispatch({
+    //   type: "setUi",
+    //   ui: (prev) => ({ ...prev, previewMode: "interactive" }),
+    // });
 
     submit({ prompt: inputValue });
   };
@@ -237,6 +260,14 @@ export default function ChatComponent() {
             className="animate-pulse bg-amber-50 text-amber-600"
           >
             Generating...
+          </Badge>
+        )}
+        {isProcessingUnsplash && (
+          <Badge
+            variant="outline"
+            className="animate-pulse bg-purple-50 text-purple-600"
+          >
+            Processing Unsplash Images...
           </Badge>
         )}
       </div>
@@ -354,7 +385,22 @@ export default function ChatComponent() {
             )}
           </div>
 
-          {editedJson && (
+          {/* Unsplash Image Processing Status */}
+          {isProcessingUnsplash && (
+            <div className="p-4 bg-purple-50 border border-purple-200 rounded-md">
+              <div className="flex w-full justify-center items-center py-2 gap-2">
+                <p className="font-medium text-purple-700">
+                  Processing Unsplash Images
+                </p>
+                <Loader2 className="animate-spin size-4 text-purple-600" />
+              </div>
+              <p className="text-sm text-center text-purple-600">
+                Downloading and optimizing images from Unsplash...
+              </p>
+            </div>
+          )}
+
+          {/* {editedJson && (
             <div className="border rounded-md overflow-hidden">
               <div className="bg-muted px-4 py-2 font-medium text-sm">
                 Edit JSON
@@ -372,7 +418,7 @@ export default function ChatComponent() {
                 </Button>
               </div>
             </div>
-          )}
+          )} */}
         </div>
       )}
 

@@ -14,6 +14,7 @@
 import "@measured/puck/puck.css";
 import { Client } from "./client";
 import { Metadata } from "next";
+import { getPage } from "@/lib/get-page";
 
 export async function generateMetadata({
   params: { puckPath = [] },
@@ -27,12 +28,13 @@ export async function generateMetadata({
   };
 }
 
+const data = getPage("/dashboard/editShadcn") || {
+  content: [],
+  root: {},
+};
+
 export default async function Page() {
-  return (
-    <>
-      <Client />
-    </>
-  );
+  return <Client data={data} />;
 }
 
 export const dynamic = "force-dynamic";

@@ -38,7 +38,7 @@ export function zones(content: string): string {
 
       // If it's a child item, add it to childrenByParent.
       if (parentId !== undefined) {
-        const parentKey = String(parentId) + ":children";
+        const parentKey = String(parentId) + ":" + (item.zoneName || "children");
         if (!childrenByParent[parentKey]) {
           childrenByParent[parentKey] = [];
         }

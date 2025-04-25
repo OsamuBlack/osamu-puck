@@ -22,7 +22,7 @@
     "@ai-sdk/react": "^1.2.9",
     "@google/generative-ai": "^0.24.0",
     "@hookform/resolvers": "^5.0.1",
-    "@measured/puck": "0.18.2",
+    "@measured/puck": "0.18.3",
     "@workspace/blocks": "workspace:*",
     "@workspace/puck": "workspace:*",
     "@workspace/ui": "workspace:*",
