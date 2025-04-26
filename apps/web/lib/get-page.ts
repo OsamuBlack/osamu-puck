@@ -9,3 +9,13 @@ export const getPage = (path: string) => {
 
   return allData ? allData[path] : null;
 };
+
+export const pageTitleFromPath = (path: string) => {
+  const parts = path.split("/").filter(Boolean);
+  return parts.length > 0 ? parts[parts.length - 1] : "New Page";
+};
+
+export const getPageTitle = (path: string) => {
+  const title = pageTitleFromPath(path);
+  return title!.charAt(0).toUpperCase() + title!.slice(1);
+};

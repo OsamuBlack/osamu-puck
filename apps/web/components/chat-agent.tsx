@@ -3,6 +3,10 @@
 import * as React from "react";
 import { useState, useEffect } from "react";
 import { experimental_useObject as useObject } from "@ai-sdk/react";
+import { usePuck, type Data } from "@measured/puck";
+import { toast } from "sonner";
+import { CircleStop, Loader2, SendHorizonal } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
 
 import { Button } from "@workspace/ui/components/button";
 import { Textarea } from "@workspace/ui/components/textarea";
@@ -13,85 +17,53 @@ import {
   AlertDescription,
   AlertTitle,
 } from "@workspace/ui/components/alert";
-import { usePuck, type Data } from "@measured/puck";
-import { toast } from "sonner";
-import {
-  RefreshCcw,
-  Copy,
-  Code,
-  CircleStop,
-  Clipboard,
-  Loader2,
-  SendHorizonal,
-} from "lucide-react";
+import { agentSchema } from "@/schema/agent";
+import { UnsplashImage } from "@/lib/snippets/unsplash";
+
 import { id } from "@/lib/snippets/id";
-import { properties } from "@/lib/snippets/properties";
 import { zones } from "@/lib/snippets/zones";
 import { transformers } from "@/lib/snippets/transformers";
-import { useUnsplashProcessor } from "./unsplash-processor";
 import { processUnsplashImages } from "@/lib/snippets/unsplash";
-import { puckSchema } from "@/app/(dashboard)/dashboard/puck/schema";
-import { agentSchema } from "@/schema/agent";
-import { Input } from "@workspace/ui/components/input";
-import { Label } from "@workspace/ui/components/label";
-import { Card, CardContent } from "@workspace/ui/components/card";
-import { useRouter } from "next/navigation";
 
-export default function ChatComponent({ path, prompt }: { path?: string, prompt?: string }) {
-  const [inputValue, setInputValue] = useState("");
+import { useLayoutGenerator } from "@/hooks/use-layout-generator";
+import { QuestionForm } from "./chat-agent/question-form";
+import { UnsplashGallery } from "./chat-agent/unsplash-gallery";
+import { LoadingState } from "./chat-agent/loading-state";
+import { EmptyState } from "./chat-agent/empty-state";
+import TestApplyToJson from "./test";
+import { puckSchema } from "@/app/(dashboard)/dashboard/puck/schema";
+
+export default function ChatComponent({
+  path,
+  prompt,
+}: {
+  path?: string;
+  prompt?: string;
+}) {
+  const [inputValue, setInputValue] = useState(prompt);
   const [isProcessingUnsplash, setIsProcessingUnsplash] = useState(false);
+  const [unsplashImages, setUnsplashImages] = useState<UnsplashImage[]>([]);
   const router = useRouter();
   const [justApplied, setJustApplied] = useState(false);
   const [answers, setAnswers] = useState<Record<number, string>>({});
+  const [initialLoading, setInitialLoading] = useState(!!prompt);
   const {
     dispatch,
     appState: { data: currentData },
   } = usePuck();
+  const [initial, setInitialApplied] = useState(prompt ? false : true);
+  const pathname = usePathname();
 
-  console.log(prompt)
+  // Normalize path function (treat /home as /)
+  const normalizePath = (path: string) => {
+    path.startsWith("/") ? path : `/${path}`;
+    return path === "/home" ? "/" : path;
+  };
 
-  useEffect(() => {
-    if (justApplied) {
-      setJustApplied(false);
-    }
-  }, [justApplied]);
+  // Get current normalized path
+  const currentPath = normalizePath(pathname.replace("/edit", ""));
 
-  // Add effect to handle initial prompt
-  useEffect(() => {
-    if (prompt) {
-      const urlDecoded = decodeURIComponent(prompt);
-      setInputValue(urlDecoded);
-      // Use a small timeout to ensure state is updated before submitting
-      const timer = setTimeout(() => {
-        submit({ prompt: urlDecoded });
-      }, 100);
-      return () => clearTimeout(timer);
-    }
-  }, []);
-
-  // Use the useObject hook for agent response
-  const { object, submit, isLoading, stop, error } = useObject({
-    api: path ? path : "/api/agent/google",
-    schema: agentSchema,
-    // Add event callbacks
-    onFinish({ object, error }) {
-      if (object) {
-        toast.success("Generated response successfully!");
-        // Reset answers when we get a new object
-        setAnswers({});
-      }
-      if (error) {
-        toast.error("Failed to parse generated response.");
-        console.error("Parsing error:", error);
-      }
-    },
-    onError(error) {
-      toast.error("An error occurred during generation.");
-      console.error("Generation error:", error);
-    },
-  });
-
-  // Process the generated JSON through all converters
+  // Process the generated JSON through all converters - moved from use-agent-actions
   const processGeneratedJson = (data: any) => {
     if (!data) return null;
 
@@ -112,7 +84,7 @@ export default function ChatComponent({ path, prompt }: { path?: string, prompt?
     }
   };
 
-  // Common function to apply JSON data to Puck
+  // Common function to apply JSON data to Puck - moved from use-agent-actions
   const applyJsonToPuck = (
     jsonData: any,
     successMessage: string = "Layout applied to editor!"
@@ -123,15 +95,24 @@ export default function ChatComponent({ path, prompt }: { path?: string, prompt?
 
       setIsProcessingUnsplash(true);
       processUnsplashImages(processedData)
-        .then((processedData: Data) => {
+        .then(({ data: processedData, images }) => {
+          // Store the unsplash images in state
+          setUnsplashImages(images);
+
           // Apply to Puck
-          dispatch({
-            type: "setData",
-            data: {
-              ...processedData,
-              root: currentData.root,
-            } as Data,
-          });
+          setTimeout(() => {
+            dispatch({
+              type: "setData",
+              data: {
+                ...processedData,
+                root: processedData.root
+                  ? {
+                      props: processedData.root,
+                    }
+                  : currentData.root,
+              } as Data,
+            });
+          }, 300);
           setJustApplied(true);
 
           toast.success(successMessage);
@@ -154,15 +135,83 @@ export default function ChatComponent({ path, prompt }: { path?: string, prompt?
     }
   };
 
-  // 1. Handle initial agent request - First step in the flow
+  const { generateLayout } = useLayoutGenerator({
+    applyJsonToPuck,
+    setInitialLoading,
+  });
+
+  // Use the useObject hook for agent response
+  const { object, submit, isLoading, stop, error } = useObject({
+    api: path || "/api/agent/google",
+    schema: agentSchema,
+    onFinish({ object, error }) {
+      if (object) {
+        toast.success("Generated response successfully!");
+        setAnswers({});
+      }
+      if (error) {
+        toast.error("Failed to parse generated response.");
+        console.error("Parsing error:", error);
+      }
+    },
+    onError(error) {
+      toast.error("An error occurred during generation.");
+      console.error("Generation error:", error);
+    },
+  });
+
+  useEffect(() => {
+    if (justApplied) {
+      setJustApplied(false);
+    }
+  }, [justApplied]);
+
+  // Handle initial prompt
+  useEffect(() => {
+    // Track whether request has been sent to avoid multiple generations
+    let requestSent = false;
+
+    if (prompt && !initial && !requestSent) {
+      console.log("Processing initial prompt:", prompt);
+      setInitialLoading(true);
+      const urlDecoded = decodeURIComponent(prompt);
+      setInputValue(urlDecoded);
+      requestSent = true;
+
+      // Use one-time timeout to handle the request
+      const timer = setTimeout(async () => {
+        await generateLayout(urlDecoded);
+        setInitialLoading(false);
+        setInitialApplied(true);
+        // Remove prompt from url params
+        router.push(pathname);
+      }, 100);
+
+      return () => {
+        clearTimeout(timer);
+      };
+    }
+  }, [prompt, initial, pathname, router]);
+
+  // Handle agent form submission
   const handleAgent = () => {
-    if (!inputValue.trim()) {
+    if (!inputValue?.trim()) {
       return toast.info("Please enter a description to generate a layout.");
     }
 
-    // Reset answers when starting a new request
     setAnswers({});
     submit({ prompt: inputValue });
+  };
+
+  // Process agent response
+  const handleAgentResponse = () => {
+    if (!object) return;
+
+    if (!object.questions || object.questions.length === 0) {
+      if (object.actionType === "reprompt") {
+        generateLayout(object.improvedPrompt);
+      }
+    }
   };
 
   // Handle answer changes for questions
@@ -173,98 +222,31 @@ export default function ChatComponent({ path, prompt }: { path?: string, prompt?
     }));
   };
 
-  // 2. Process agent response and handle questions
-  const handleAgentResponse = () => {
-    if (!object) return;
-
-    // If there are no questions, we can proceed to generate layout
-    if (!object.questions || object.questions.length === 0) {
-      if (object.actionType === "generate") {
-        handleGenerateLayout();
-      }
-    }
-    // Otherwise, the questions form will be shown for user to fill
-  };
-
-  // 3. Generate layout with answers to questions
+  // Generate layout with answers
   const handleGenerateWithAnswers = () => {
     if (!object || !object.questions || !object.improvedPrompt) {
       return toast.error("No questions or improved prompt available");
     }
 
-    // Check if all questions are answered
     const unanswered = object.questions.some((_, index) => !answers[index]);
     if (unanswered) {
       return toast.error("Please answer all questions");
     }
 
-    // Create improved prompt with answers
     let finalPrompt = object.improvedPrompt;
     object.questions.forEach((q, index) => {
       if (answers[index]) {
-        // Replace placeholder in the prompt with the answer
         finalPrompt = q?.replace
           ? finalPrompt.replace(q?.replace, answers[index])
           : finalPrompt;
       }
     });
 
-    // Submit the improved prompt to generate layout
     toast.info("Generating layout with your specifications...");
-    handleGenerateLayout(finalPrompt);
+    generateLayout(finalPrompt);
   };
 
-  // 4. Generate the layout using the final prompt
-  const handleGenerateLayout = (customPrompt?: string) => {
-    const promptToUse = customPrompt || object?.improvedPrompt;
-
-    if (!promptToUse) {
-      return toast.error("No prompt available for layout generation");
-    }
-
-    // Use the prompt to generate layout
-    toast.info("Generating layout...");
-
-    // Call the generate API with the prompt
-    fetch("/api/multi/google", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ prompt: promptToUse }),
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        // Check if data matches puckSchema
-        const result = puckSchema.safeParse(data);
-        if (result.success) {
-          applyJsonToPuck(data, "Layout generated and applied!");
-        } else {
-          toast.error("Generated layout has invalid format");
-          console.error("Schema validation error:", result.error);
-        }
-      })
-      .catch((error) => {
-        toast.error("Error generating layout");
-        console.error("Layout generation error:", error);
-      });
-  };
-
-  // Apply the generated layout to the Puck editor
-  const applyToPuck = () => {
-    if (!object) return toast.info("No layout generated yet.");
-    const result = puckSchema.safeParse(object);
-
-    if (!result.success) {
-      toast.error(
-        "Invalid JSON schema. Generated layout doesn't match expected format."
-      );
-      console.error("Schema validation error:", result.error);
-      return;
-    }
-
-    applyJsonToPuck(object);
-  };
-
-  // Effect to automatically process agent response when it's received
+  // Auto-process agent response
   useEffect(() => {
     if (object && !isLoading) {
       handleAgentResponse();
@@ -298,7 +280,7 @@ export default function ChatComponent({ path, prompt }: { path?: string, prompt?
           <div className="flex space-x-2">
             <Button
               onClick={handleAgent}
-              disabled={isLoading || !inputValue.trim()}
+              disabled={isLoading || !inputValue?.trim() || initialLoading}
               size="sm"
             >
               Generate Layout
@@ -338,51 +320,21 @@ export default function ChatComponent({ path, prompt }: { path?: string, prompt?
 
             <Separator />
 
-            {/* Questions section - Only shown if questions exist */}
+            {/* Questions section - Using extracted component */}
             {object.questions && object.questions.length > 0 && (
-              <div className="mt-4 flex flex-col gap-4">
-                <p className="font-medium text-sm mb-3">
-                  Please answer these questions to customize your layout:
-                </p>
-                <div className="space-y-4">
-                  {object.questions.map((q, idx) => (
-                    <div key={idx} className="space-y-1">
-                      <Label
-                        className="p-1 text-neutral-700"
-                        htmlFor={`question-${idx}`}
-                      >
-                        {q?.question}
-                      </Label>
-                      <Input
-                        id={`question-${idx}`}
-                        value={answers[idx] || ""}
-                        onChange={(e) =>
-                          handleAnswerChange(idx, e.target.value)
-                        }
-                        placeholder="Your answer"
-                        className="bg-white"
-                      />
-                    </div>
-                  ))}
-                </div>
-                <Button
-                  onClick={handleGenerateWithAnswers}
-                  className="w-full"
-                  disabled={
-                    Object.keys(answers).length <
-                    (object.questions?.length || 0)
-                  }
-                >
-                  Apply
-                </Button>
-              </div>
+              <QuestionForm
+                questions={object.questions as any}
+                answers={answers}
+                onAnswerChange={handleAnswerChange}
+                onSubmit={handleGenerateWithAnswers}
+              />
             )}
 
-            {/* Generate layout button - Only shown if no questions or when in actionType=generate */}
+            {/* Generate layout button */}
             {(!object.questions || object.questions.length === 0) &&
-              object.actionType === "generate" && (
+              object.actionType === "reprompt" && (
                 <Button
-                  onClick={() => handleGenerateLayout()}
+                  onClick={() => generateLayout(object.improvedPrompt)}
                   className="w-full"
                 >
                   Generate Layout
@@ -393,44 +345,90 @@ export default function ChatComponent({ path, prompt }: { path?: string, prompt?
               <div className="mt-4 flex flex-col gap-4">
                 <p className="font-medium text-sm mb-3">Pages to be created:</p>
                 <div className="space-y-2">
-                  {(object.pages || []).map((page, idx) => (
-                    <Alert
-                      key={page?.slug}
-                      className="flex justify-between items-center"
-                    >
-                      <div className="flex-col gap-1">
-                        <AlertTitle>{page?.title}</AlertTitle>
-                        <AlertDescription>{page?.slug}</AlertDescription>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        title="create page"
-                        onClick={() => {
-                          const url = `/editor/${page?.slug}/edit?prompt=${encodeURIComponent(
-                            page?.prompt!
-                          )}`;
-                          window.open(url, "_blank");
-                        }}
+                  {(object.pages || []).map((page, idx) => {
+                    const pagePath = `/${
+                      page?.slug?.startsWith("/")
+                        ? page?.slug
+                        : `/${page?.slug}`
+                    }`;
+                    const isCurrentPage =
+                      normalizePath(pagePath) === currentPath;
+
+                    return (
+                      <Alert
+                        key={page?.slug}
+                        className={`flex justify-between items-center ${isCurrentPage ? "border-blue-500 bg-blue-50" : ""}`}
                       >
-                        <SendHorizonal size="16" />
-                      </Button>
-                    </Alert>
-                  ))}
+                        <div className="flex-col gap-1">
+                          <AlertTitle>
+                            {page?.title} {isCurrentPage && "(Current Page)"}
+                          </AlertTitle>
+                          <AlertDescription>{page?.slug}</AlertDescription>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          title={
+                            isCurrentPage
+                              ? "update current page"
+                              : "create page"
+                          }
+                          onClick={() => {
+                            const uri = isCurrentPage
+                              ? `?prompt=${encodeURIComponent(page?.prompt!)}`
+                              : `/${
+                                  page?.slug?.startsWith("/")
+                                    ? page?.slug?.slice(1)
+                                    : page?.slug
+                                }/edit?prompt=${encodeURIComponent(page?.prompt!)}`;
+
+                            const siteUrl = window.location.origin;
+                            const fullUrl = `${siteUrl}/${uri}`;
+
+                            const anchor = document.createElement("a");
+                            anchor.href = fullUrl;
+                            anchor.target = "_blank";
+                            anchor.click();
+                            anchor.remove();
+                          }}
+                        >
+                          <SendHorizonal size="16" />
+                        </Button>
+                      </Alert>
+                    );
+                  })}
                 </div>
                 <Button
                   onClick={() => {
-                    // open all pages with /slug/edit?prompt=... in new tabs using js
+                    // Filter out current page and open only other pages
+                    object.pages
+                      ?.filter(
+                        (page) =>
+                          normalizePath(`/${page?.slug}`) !== currentPath
+                      )
+                      ?.forEach((page) => {
+                        const pagePath = `/${page?.slug}`;
+                        const isCurrentPage =
+                          normalizePath(pagePath) === currentPath;
 
-                    object.pages?.forEach((page) => {
-                      const url = `/editor/${page?.slug}/edit?prompt=${encodeURIComponent(
-                        page?.prompt!
-                      )}`;
-                      window.open(url, "_blank");
-                    });
+                        if (!isCurrentPage) {
+                          const uri = `/${page?.slug}/edit?prompt=${encodeURIComponent(
+                            page?.prompt!
+                          )}`;
+                          const siteUrl = window.location.origin;
+                          const fullUrl = `${siteUrl}/${uri}`;
+                          // Use anchor tag to open in new tab
+
+                          const anchor = document.createElement("a");
+                          anchor.href = fullUrl;
+                          anchor.target = "_blank";
+                          anchor.click();
+                          anchor.remove();
+                        }
+                      });
                   }}
                 >
-                  Create All
+                  Create All Others
                 </Button>
               </div>
             )}
@@ -445,27 +443,17 @@ export default function ChatComponent({ path, prompt }: { path?: string, prompt?
         </div>
       )}
 
-      {/* Empty state */}
-      {!object && !isLoading && !error && (
-        <div className="flex-1 flex items-center justify-center p-8">
-          <div className="text-center space-y-2">
-            <p className="text-muted-foreground">
-              Enter a description above to generate a layout
-            </p>
-          </div>
-        </div>
+      {/* Empty state - Using extracted component */}
+      {!object && !isLoading && !initialLoading && !error && <EmptyState />}
+
+      {/* Loading state - Using extracted component */}
+      {(isLoading || initialLoading) && !object && (
+        <LoadingState isInitialLoading={initialLoading} />
       )}
 
-      {/* Loading state */}
-      {isLoading && !object && (
-        <div className="flex-1 flex items-center justify-center p-8">
-          <div className="text-center space-y-4">
-            <div className="flex justify-center">
-              <Loader2 className="animate-spin" />
-            </div>
-            <p className="text-muted-foreground">Processing your input</p>
-          </div>
-        </div>
+      {/* Unsplash gallery - Using extracted component */}
+      {(isProcessingUnsplash || unsplashImages.length > 0) && (
+        <UnsplashGallery images={unsplashImages} />
       )}
     </div>
   );

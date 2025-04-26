@@ -2,8 +2,8 @@
 
 import { Data } from "@measured/puck";
 import { Render } from "@measured/puck";
-import config from "./(dashboard)/dashboard/puck/puck.config";
 import Script from "next/script";
+import config from "../(dashboard)/dashboard/puck/puck.config";
 
 export default function Client({ data }: { data: Data }) {
   return (

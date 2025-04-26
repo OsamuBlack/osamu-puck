@@ -14,36 +14,60 @@
 import "@measured/puck/puck.css";
 import { Client } from "./client";
 import { Metadata } from "next";
-import { getPage } from "@/lib/get-page";
+import { getPage, getPageTitle } from "@/lib/get-page";
 
 export async function generateMetadata({
-  params: { puckPath = [] },
+  params,
 }: {
-  params: { puckPath: string[] };
+  params: Promise<{ puck: string[] }>;
 }): Promise<Metadata> {
-  const path = `/${puckPath.join("/")}`;
+  const { puck = [] } = await params;
+  const data = getPage(`/${puck.join("/")}`);
+  const path = `/${puck.join("/")}`;
 
   return {
-    title: "Puck: " + path,
+    title: "Editing: " + getPageTitle(path),
   };
 }
+import { AppSidebar } from "@/components/app-sidebar";
+import { getPageUrls } from "@/lib/get-urls";
+import { SidebarProvider } from "@workspace/ui/components/sidebar";
 
 export default async function Page({
   params,
   searchParams,
 }: {
-  params: Promise<{ puckPath: string[] }>;
-  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
+  params: Promise<{ puck: string[] }>;
+  searchParams?: Promise<{
+    prompt?: string;
+  }>;
 }) {
-  const { puckPath = [] } = await params;
-  const path = `/${puckPath.join("/")}`;
+  const { puck = [] } = await params;
+  const path = `/${puck.join("/")}`;
   const data = getPage(path) || {
     content: [],
-    root: { props: { title: "New Page" } },
+    root: { props: { title: getPageTitle(path) } },
   };
-  console.log(await searchParams);
 
-  return <Client data={data} path={path} prompt={""} />;
+  const urls = await getPageUrls();
+
+  const { prompt } = (await searchParams) || { prompt: undefined };
+
+  return (
+    <div className="flex h-screen w-screen overflow-hidden bg-white text-black">
+      <SidebarProvider defaultOpen={false}>
+        <AppSidebar
+          pageUrls={urls.map((page) => ({
+            title: getPageTitle(page),
+            url: page,
+          }))}
+        />
+        <div className="w-full">
+          <Client data={data} path={path} prompt={prompt} />
+        </div>
+      </SidebarProvider>
+    </div>
+  );
 }
 
 export const dynamic = "force-dynamic";

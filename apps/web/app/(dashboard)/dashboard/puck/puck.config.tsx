@@ -10,6 +10,11 @@ import {
   TypographyConfig,
   TypographyType,
 } from "@workspace/puck/typography/config";
+import {
+  defaultMetadata,
+  metadataFields,
+  MetadataProps,
+} from "@workspace/puck/next-meta/config";
 
 type ComponentProps = {
   base: BaseComponentType;
@@ -18,9 +23,7 @@ type ComponentProps = {
   card: CardType;
 };
 
-type RootProps = {
-  title: string;
-};
+type RootProps = MetadataProps;
 
 export const config: Config<ComponentProps, RootProps> = {
   components: {
@@ -29,7 +32,10 @@ export const config: Config<ComponentProps, RootProps> = {
     typography: TypographyConfig,
     card: CardConfig,
   },
-  root: {},
+  root: {
+    fields: metadataFields,
+    defaultProps: defaultMetadata,
+  },
 };
 
 export default config;

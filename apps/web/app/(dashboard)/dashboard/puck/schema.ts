@@ -1,3 +1,4 @@
+import { MetadatSchema } from "@workspace/puck/next-meta/config";
 import { z } from "zod";
 
 export const puckSchema = z.object({
@@ -58,4 +59,18 @@ export const puckSchema = z.object({
       ),
     })
   ),
+  root: z.object({
+    title: z
+      .string()
+      .describe("Page Title will be used for SEO and browser tab."),
+    description: z.string().describe("Meta Description for seo."),
+    ogImages: z.array(
+      z.object({
+        width: z.number().describe("Width"),
+        height: z.number().describe("Height"),
+        alt: z.string().describe("Alt Text"),
+        url: z.string().describe("URL"),
+      })
+    ),
+  }),
 });

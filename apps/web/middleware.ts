@@ -12,7 +12,7 @@ export default function middleware(req: NextRequest) {
       );
       // search params
       const searchParams = req.nextUrl.searchParams.toString();
-      const pathWithEditPrefix = `/dashboard/puck/${pathWithoutEdit}?${searchParams}`;
+      const pathWithEditPrefix = `/dashboard/puck${pathWithoutEdit}?${searchParams}`;
 
       return NextResponse.rewrite(new URL(pathWithEditPrefix, req.url));
     }

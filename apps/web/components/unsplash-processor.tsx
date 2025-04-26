@@ -7,9 +7,17 @@ import { puckSchema } from "@/app/(dashboard)/dashboard/single/schema";
 import { id } from "@/lib/snippets/id";
 import { zones } from "@/lib/snippets/zones";
 import { transformers } from "@/lib/snippets/transformers";
-import { processUnsplashImages } from "@/lib/snippets/unsplash";
+import { processUnsplashImages, type UnsplashImage } from "@/lib/snippets/unsplash";
 import { Button } from "@workspace/ui/components/button";
 import { Copy } from "lucide-react";
+
+/**
+ * Return type for processor functions
+ */
+export type ProcessedResult = {
+  data: any;
+  images: UnsplashImage[];
+};
 
 /**
  * UnsplashProcessor provides utility functions to process JSON data through
@@ -24,8 +32,8 @@ export function useUnsplashProcessor() {
   /**
    * Process generated JSON through all converters, including Unsplash image URLs
    */
-  const processGeneratedJson = async (data: any) => {
-    if (!data) return null;
+  const processGeneratedJson = async (data: any): Promise<ProcessedResult> => {
+    if (!data) return { data: null, images: [] };
 
     try {
       // Convert to string for processing
@@ -40,13 +48,13 @@ export function useUnsplashProcessor() {
       const parsedData = JSON.parse(jsonString);
       
       // Process Unsplash image URLs (server action)
-      const processedData = await processUnsplashImages(parsedData);
+      const { data: processedData, images } = await processUnsplashImages(parsedData);
 
-      return processedData;
+      return { data: processedData, images };
     } catch (error) {
       console.error("Error processing JSON:", error);
       toast.error("Error processing generated layout");
-      return data; // Return original on error
+      return { data, images: [] }; // Return original on error
     }
   };
 
@@ -56,10 +64,10 @@ export function useUnsplashProcessor() {
   const applyJsonToPuck = async (
     jsonData: any,
     successMessage: string = "Layout applied to editor!"
-  ) => {
+  ): Promise<ProcessedResult> => {
     try {
       // Process JSON through converters
-      const processedData = await processGeneratedJson(jsonData);
+      const { data: processedData, images } = await processGeneratedJson(jsonData);
 
       // Apply to Puck
       // dispatch({
@@ -71,11 +79,11 @@ export function useUnsplashProcessor() {
       // });
 
       toast.success(successMessage);
-      return true;
+      return { data: processedData, images };
     } catch (e) {
       console.error("Failed to apply JSON:", e);
       toast.error("Failed to apply JSON to editor");
-      return false;
+      return { data: null, images: [] };
     }
   };
 
@@ -87,7 +95,7 @@ export function useUnsplashProcessor() {
 
     try {
       // Process the generated JSON through all converters
-      const processedData = await processGeneratedJson(data);
+      const { data: processedData } = await processGeneratedJson(data);
       const jsonString = JSON.stringify(processedData, null, 2);
       navigator.clipboard.writeText(jsonString);
       toast.success("JSON copied to clipboard");
@@ -98,7 +106,7 @@ export function useUnsplashProcessor() {
   };
 
   // Validate and apply a JSON object to Puck
-  const validateAndApplyToPuck = async (jsonData: any) => {
+  const validateAndApplyToPuck = async (jsonData: any): Promise<ProcessedResult> => {
     const result = puckSchema.safeParse(jsonData);
 
     if (!result.success) {
@@ -106,7 +114,7 @@ export function useUnsplashProcessor() {
         "Invalid JSON schema. Layout doesn't match expected format."
       );
       console.error("Schema validation error:", result.error);
-      return false;
+      return { data: null, images: [] };
     }
 
     return await applyJsonToPuck(jsonData);
